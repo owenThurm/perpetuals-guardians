@@ -1,0 +1,59 @@
+
+Manual Review: 
+
+1.🟠  No minimumPositionSize for opening a position, so if not provided other functions get affected for unnecceasrily lower balance fees count
+
+
+2. 🔴 In increasePositionSize function, the borrowing fees has applied on a original position
+.it should be applied on a new position, after the positionFee is being applied. Also, it should be applied after checking the healthFactor.
+this may lead to the leverage ratio being higher than intended (this may result in liquidation) (HIGH, I hope so)
+
+
+3. 🔴 In liquidate function: No insufficient collateral-condition-check before reducing borrowing fees from collateral
+   (i.e. what if position.collaateral < borrwingfees). also after calculating pnl 
+
+
+4. 🔴 In liquidate function: No insufficient collateral-condition-check before reducing liquidation fees from collateral
+   (i.e. what if position.collateral < liquidationfees). Liquidators will not be incentivized to liquidate those accounts that do not 
+   provide them with a liquidation fee. As a result, the liquidation of these accounts might be delayed or not performed at all.
+
+
+5. 🔴 No position health check in increasePositionSize function beofre applying borrowing and position fees, 
+leading a miscalculation which eventually affects the liquidation conditions. 
+
+
+6. 🟢 BorrowingFee applied in function increaseCollateral. No need. 
+
+
+7. 🟠 In decreasePosition function, borrowingFee has been deducted without considering the PnL || positionHealth of the given state of UserPosition.
+    +  fees deduction applied on the original price insstead of new one. 
+ so if a legitimate user close to liquidation, who may want to reduce leverage by decreasing position will end up immediately liquidatable, due to 
+ fees getting cut from collateral even before checking pnl. 
+
+
+8.  🔴  In function isLiquidatable, positionCollateral value can be <= 0, No non-zero && non-negative checks are provided 
+    before calculating leverage. Hence leaving many positions unliquidatable.(Critical???)
+
+
+9.   🟠In function increasePositionCollateral, positionHealth check is not done before adding the collateral ammount. 
+
+
+10. 🔴  no withdrawCollateral function 
+
+11. 🔴 no closePosition funct
+
+🟢 no deposit collateral 
+
+
+(optional) 
+* No getter functions for private/internal variables
+
+
+
+
+
+
+
+
+
+
