@@ -43,7 +43,7 @@ leading a miscalculation which eventually affects the liquidation conditions.
 11. 🔴 no closePosition funct
 
 🟢 no deposit collateral 
-
+🟢  Functions mint, withdraw , redeem were not implemented completely so it's always gonna revert 
 
 (optional) 
 * No getter functions for private/internal variables

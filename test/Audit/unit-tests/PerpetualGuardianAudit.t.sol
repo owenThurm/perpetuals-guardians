@@ -25,8 +25,8 @@ contract PerpetualGuardianAuditTest is StdCheats, Test {
 
     address public lP1 = makeAddr("lP1");
     address public lP2 = makeAddr("lP2");
-    address public trader1 = makeAddr("trader1");
-    address public trader2 = makeAddr("trader2");
+    address public user1 = makeAddr("user1");
+    address public user2 = makeAddr("user2");
     address public liquidator = makeAddr("liquidator");
 
     ERC20Mock public DAI;
@@ -42,31 +42,29 @@ contract PerpetualGuardianAuditTest is StdCheats, Test {
             DAI = ERC20Mock(perpetualGuardian.asset());
             DAI.mint(lP1, 100_000);
             DAI.mint(lP2, 100_000);
-            DAI.mint(trader1, 50_000);
-            DAI.mint(trader2, 10_000);
+            DAI.mint(user1, 50_000);
+            DAI.mint(user2, 10_000);
         }
     }
 
-   
+    modifier users() {
+        vm.startPrank(user1);
+        ERC20Mock(dai).approve(address(perpetualGuardian), 10_000);
+        perpetualGuardian.openPosition(5_000, 1_000, false);
+        vm.stopPrank();
+        vm.startPrank(user2);
+        ERC20Mock(dai).approve(address(perpetualGuardian), 10_000);
+        perpetualGuardian.openPosition(5_000, 1_000, true);
+        vm.stopPrank();
+        _;
+    }
 
-    // modifier addTrader() {
-    //     vm.startPrank(trader1);
-    //     DAI.increaseAllowance(address(perpetualGuardian), 1_000);
-    //     perpetualGuardian.openPosition(5_000, 1_000, false);
-    //     vm.stopPrank();
-    //     vm.startPrank(trader2);
-    //     DAI.increaseAllowance(address(perpetualGuardian), 1_000);
-    //     perpetualGuardian.openPosition(5_000, 1_000, true);
-    //     vm.stopPrank();
-    //     _;
-    // }
-
-     modifier depositLP() {
+    modifier depositLP() {
         vm.startPrank(lP1);
         ERC20Mock(dai).approve(address(perpetualGuardian), 10_000);
         perpetualGuardian.addLiquidity(10_000);
         vm.stopPrank();
-        
+
         vm.startPrank(lP2);
         ERC20Mock(dai).approve(address(perpetualGuardian), 10_000);
         perpetualGuardian.addLiquidity(20_000);
@@ -75,9 +73,9 @@ contract PerpetualGuardianAuditTest is StdCheats, Test {
     }
 
     // ----------- PRICE TESTS -----------------
-    
-    function testGetDaiValueOfEth() public {  // ✅
- 
+
+    function testGetDaiValueOfEth() public {
+        // ✅
         uint256 ethAmount = 10e18;
         // 10e18 * ETH_DAI_PRICE = 10000e8
         uint256 expectedEthInDai = 10000e18;
@@ -85,19 +83,20 @@ contract PerpetualGuardianAuditTest is StdCheats, Test {
         assertEq(expectedEthInDai, actualValue);
     }
 
-    function testGetTokenSizeFromDai() public {  // ✅
+    function testGetTokenSizeFromDai() public {
+        // ✅
         // If we want $100 of WETH @ $1000/WETH, that would be 0.1 WETH
         uint256 ethPrice = perpetualGuardian.getPrice();
         uint256 size = 100;
         uint256 expectedWethValue = 0.1 ether;
-        uint256 amountWeth = (size * 1e30)/(ethPrice);
+        uint256 amountWeth = (size * 1e30) / (ethPrice);
         assert(amountWeth == expectedWethValue);
     }
 
-
     // ----------- LIQUIDITY PROVIDER TESTS -----------------
 
-    function testAddAndRemoveLiquidity() public {  // ✅
+    function testAddAndRemoveLiquidity() public {
+        // ✅
         vm.startPrank(lP1);
         ERC20Mock(dai).approve(address(perpetualGuardian), 10_000);
         perpetualGuardian.addLiquidity(100);
@@ -108,5 +107,12 @@ contract PerpetualGuardianAuditTest is StdCheats, Test {
         vm.stopPrank();
     }
 
-    function testTotalAssets() public {}
+    // ----------- TRADER TESTS -----------------
+
+    function testOpenPositionWhenLiquidyIsInsufficient() public users {
+        vm.startPrank(user1);
+        DAI.increaseAllowance(address(perpetualGuardian), 28_000);
+        vm.expectRevert(PerpetualGuardian.PerpetualGuardian__InsufficientLiquidity.selector);
+        perpetualGuardian.openPosition(28_000, 28_000, true);
+    }
 }

@@ -1,8 +1,13 @@
 //INVARIANTS:
+
 // tradersCollateral should always be a non zero && non-negative value
+
 // leverage should always be below the MAX_LEVERAGE
+
 //Positions that aren't liquidatable shouldn't be able to be passed through the liquidate function
+
 //total borrowed amount must be < max utilization* total Liquidity provided
+
 // total liquidity provided * 0.8 == available amount for borroWing
 
 //SPDX-License-Identifier:MIT
@@ -24,6 +29,8 @@ contract InvariantsTest is StdInvariant, Test {
     address public ethDaiPriceFeed;
     address public dai;
     uint256 public deployerKey;
+    uint256 MAX_LEVERAGE = 20;
+    uint256 PRECISION = 1e18;
 
     function setUp() public {
         DeployPerpetualGuardian deployer = new DeployPerpetualGuardian();
@@ -37,11 +44,21 @@ contract InvariantsTest is StdInvariant, Test {
     // total liquidity provided * 0.8 == available amount for borroWing
 
     function invariant_borrowedLiquidityMustBeLessThanToTalLiquidityProvided() public {
+        /* No getter functions for private/Internal variables provided in the contract */
+
         uint256 totalBorrowedAmount =
             perpetualGuardian.totalLongPositions.sizeInDai() + perpetualGuardian.totalShortPositions.sizeInDai();
         uint256 availableLiquidity =
             perpetualGuardian.totalAssets() * perpetualGuardian.MAX_UTILIZATION_PERCENTAGE() / 100;
 
         assert(totalBorrowedAmount <= availableLiquidity);
+    }
+
+    function invariant_leverageMustBeLessThanMaxLeverage() public {
+        struct Position;
+        Position = perpetualGuardian.getPosition( /*pass owner addresses*/ );
+        uint256 leverage = ((Position.ethAmount * Position.avgEthPrice) / Position.Collateral) / PRECISION;
+
+        assert(leverage < MAX_LEVERAGE);
     }
 }
