@@ -40,8 +40,7 @@ contract PerpetualGuardianTest is StdCheats, Test {
     function setUp() public {
         DeployPerpetualGuardian deployer = new DeployPerpetualGuardian();
         (perpetualGuardian, helperConfig) = deployer.run();
-        (ethDaiPriceFeed, dai, deployerKey) = helperConfig
-            .activeNetworkConfig();
+        (ethDaiPriceFeed, dai, deployerKey) = helperConfig.activeNetworkConfig();
         if (block.chainid == 31337) {
             DAI = ERC20Mock(perpetualGuardian.asset());
             DAI.mint(lP1, 100_000);
@@ -158,24 +157,19 @@ contract PerpetualGuardianTest is StdCheats, Test {
         vm.startPrank(trader1);
         DAI.increaseAllowance(address(perpetualGuardian), 5_000);
         perpetualGuardian.openPosition(1_000, 1_000, true);
-        vm.expectRevert(
-            PerpetualGuardian.PerpetualGuardian__PositionAlreadyExists.selector
-        );
+        vm.expectRevert(PerpetualGuardian.PerpetualGuardian__PositionAlreadyExists.selector);
         perpetualGuardian.openPosition(1_000, 1_000, true);
     }
 
     function testGetPositionShouldRevert() public addLP {
-        vm.expectRevert(
-            PerpetualGuardian.PerpetualGuardian__PositionDoesNotExist.selector
-        );
+        vm.expectRevert(PerpetualGuardian.PerpetualGuardian__PositionDoesNotExist.selector);
         perpetualGuardian.getPosition(trader1);
     }
 
     function testGetPosition() public addLP {
         openTradePosition(trader1, 1_000, 5_000, false);
 
-        PerpetualGuardian.Position memory position = perpetualGuardian
-            .getPosition(trader1);
+        PerpetualGuardian.Position memory position = perpetualGuardian.getPosition(trader1);
 
         assertEq(position.collateral, 1_000e18);
         assertEq(position.isLong, false);
@@ -282,8 +276,7 @@ contract PerpetualGuardianTest is StdCheats, Test {
         vm.prank(trader1);
         perpetualGuardian.increasePositionSize(1_000);
 
-        PerpetualGuardian.Position memory position = perpetualGuardian
-            .getPosition(trader1);
+        PerpetualGuardian.Position memory position = perpetualGuardian.getPosition(trader1);
 
         assertEq((position.avgEthPrice * position.ethAmount) / 1e18, 6_000e18);
         assertEq(perpetualGuardian.totalAssets(), 30_000);
@@ -293,9 +286,7 @@ contract PerpetualGuardianTest is StdCheats, Test {
     function testIncreasePositionSizeFailDueUnhealthyPosition() public addLP {
         openTradePosition(trader1, 1_000, 5_000, false);
 
-        vm.expectRevert(
-            PerpetualGuardian.PerpetualGuardian__BreaksHealthFactor.selector
-        );
+        vm.expectRevert(PerpetualGuardian.PerpetualGuardian__BreaksHealthFactor.selector);
         vm.prank(trader1);
         perpetualGuardian.increasePositionSize(20_000);
     }
@@ -306,11 +297,7 @@ contract PerpetualGuardianTest is StdCheats, Test {
         int256 ethUsdUpdatedPrice = 500e8;
         MockV3Aggregator(ethDaiPriceFeed).updateAnswer(ethUsdUpdatedPrice);
 
-        vm.expectRevert(
-            PerpetualGuardian
-                .PerpetualGuardian__InsufficientPositionCollateral
-                .selector
-        );
+        vm.expectRevert(PerpetualGuardian.PerpetualGuardian__InsufficientPositionCollateral.selector);
         vm.prank(trader1);
         perpetualGuardian.increasePositionSize(11_000);
     }
@@ -318,9 +305,7 @@ contract PerpetualGuardianTest is StdCheats, Test {
     function testIncreasePositionSizeFailForExceededLeverage() public addLP {
         openTradePosition(trader1, 1_000, 5_000, true);
 
-        vm.expectRevert(
-            PerpetualGuardian.PerpetualGuardian__BreaksHealthFactor.selector
-        );
+        vm.expectRevert(PerpetualGuardian.PerpetualGuardian__BreaksHealthFactor.selector);
         vm.prank(trader1);
         perpetualGuardian.increasePositionSize(11_000);
     }
@@ -338,8 +323,7 @@ contract PerpetualGuardianTest is StdCheats, Test {
         vm.prank(trader1);
         perpetualGuardian.increasePositionSize(6_000);
 
-        PerpetualGuardian.Position memory position = perpetualGuardian
-            .getPosition(trader1);
+        PerpetualGuardian.Position memory position = perpetualGuardian.getPosition(trader1);
 
         assertEq(position.ethAmount, 9e18);
         assertEq(perpetualGuardian.totalAssets(), 27_500);
@@ -359,8 +343,7 @@ contract PerpetualGuardianTest is StdCheats, Test {
         vm.prank(trader1);
         perpetualGuardian.increasePositionSize(900);
 
-        PerpetualGuardian.Position memory position = perpetualGuardian
-            .getPosition(trader1);
+        PerpetualGuardian.Position memory position = perpetualGuardian.getPosition(trader1);
 
         assertEq(position.ethAmount, 6e18);
         assertEq(perpetualGuardian.totalAssets(), 30_500);
@@ -385,9 +368,7 @@ contract PerpetualGuardianTest is StdCheats, Test {
     function testDecreasePositionCollateralFailBecauseLeverage() public addLP {
         openTradePosition(trader1, 1_000, 10_000, true);
         vm.startPrank(trader1);
-        vm.expectRevert(
-            PerpetualGuardian.PerpetualGuardian__BreaksHealthFactor.selector
-        );
+        vm.expectRevert(PerpetualGuardian.PerpetualGuardian__BreaksHealthFactor.selector);
         perpetualGuardian.decreasePosition(600, 0);
     }
 
@@ -464,18 +445,14 @@ contract PerpetualGuardianTest is StdCheats, Test {
     function testWithdrawLiquidityFailsBecauseOfLiquidityLimit() public addLP {
         openTradePosition(trader1, 10_000, 15_000, true);
         vm.startPrank(lP2);
-        vm.expectRevert(
-            PerpetualGuardian.PerpetualGuardian__InsufficientLiquidity.selector
-        );
+        vm.expectRevert(PerpetualGuardian.PerpetualGuardian__InsufficientLiquidity.selector);
         perpetualGuardian.removeLiquidity(20_000);
     }
 
     function testOpenPositionFailsBecauseOfLiquidityLimit() public addLP {
         vm.startPrank(trader1);
         DAI.increaseAllowance(address(perpetualGuardian), 28_000);
-        vm.expectRevert(
-            PerpetualGuardian.PerpetualGuardian__InsufficientLiquidity.selector
-        );
+        vm.expectRevert(PerpetualGuardian.PerpetualGuardian__InsufficientLiquidity.selector);
         //Didn't use the openTradePosition, because expectRevert is confused
         //by the DAI.increaseAllowance func call and expects it to revert instead
         perpetualGuardian.openPosition(28_000, 28_000, true);
@@ -487,8 +464,7 @@ contract PerpetualGuardianTest is StdCheats, Test {
     function testBorrowingFeeWhileIncreasingCollateral() public addLP {
         openTradePosition(trader1, 1_000, 1_000, true);
 
-        PerpetualGuardian.Position memory position = perpetualGuardian
-            .getPosition(trader1);
+        PerpetualGuardian.Position memory position = perpetualGuardian.getPosition(trader1);
         vm.startPrank(trader1);
         DAI.increaseAllowance(address(perpetualGuardian), 1_000);
         vm.warp(perpetualGuardian.YEAR_IN_SECONDS() + 1); // adding 1, because that's the initial block.timestamp
@@ -498,10 +474,7 @@ contract PerpetualGuardianTest is StdCheats, Test {
 
         //check position state
         assertEq(position.collateral, 1900e18); // 1000 starting - 100 fees + 1000 increase
-        assertEq(
-            position.lastChangeTimestamp,
-            perpetualGuardian.YEAR_IN_SECONDS() + 1
-        );
+        assertEq(position.lastChangeTimestamp, perpetualGuardian.YEAR_IN_SECONDS() + 1);
         assertEq(position.ethAmount, 1e18); //unchanged
 
         //check contract state
@@ -517,8 +490,7 @@ contract PerpetualGuardianTest is StdCheats, Test {
         vm.prank(perpetualGuardian.owner());
         perpetualGuardian.setPositionFeeBasisPoints(0);
 
-        PerpetualGuardian.Position memory position = perpetualGuardian
-            .getPosition(trader1);
+        PerpetualGuardian.Position memory position = perpetualGuardian.getPosition(trader1);
 
         vm.startPrank(trader1);
         vm.warp(perpetualGuardian.YEAR_IN_SECONDS() + 1); // adding 1, because that's the initial block.timestamp
@@ -528,10 +500,7 @@ contract PerpetualGuardianTest is StdCheats, Test {
 
         //check position state
         assertEq(position.collateral, 900e18); // 1000 starting - 100 fees
-        assertEq(
-            position.lastChangeTimestamp,
-            perpetualGuardian.YEAR_IN_SECONDS() + 1
-        );
+        assertEq(position.lastChangeTimestamp, perpetualGuardian.YEAR_IN_SECONDS() + 1);
         assertEq(position.ethAmount, 2e18); //added 1 more ETH
 
         //check contract state
@@ -543,8 +512,7 @@ contract PerpetualGuardianTest is StdCheats, Test {
     function testBorrowingFeeWhileDecreasingSize() public addLP {
         openTradePosition(trader1, 2_000, 2_000, true);
 
-        PerpetualGuardian.Position memory position = perpetualGuardian
-            .getPosition(trader1);
+        PerpetualGuardian.Position memory position = perpetualGuardian.getPosition(trader1);
 
         vm.startPrank(trader1);
         vm.warp(perpetualGuardian.YEAR_IN_SECONDS() + 1); // adding 1, because that's the initial block.timestamp
@@ -554,10 +522,7 @@ contract PerpetualGuardianTest is StdCheats, Test {
 
         //check position state
         assertEq(position.collateral, 1800e18); // 2000 starting - 200 fees
-        assertEq(
-            position.lastChangeTimestamp,
-            perpetualGuardian.YEAR_IN_SECONDS() + 1
-        );
+        assertEq(position.lastChangeTimestamp, perpetualGuardian.YEAR_IN_SECONDS() + 1);
         assertEq(position.ethAmount, 1e18);
 
         //check contract state
@@ -569,8 +534,7 @@ contract PerpetualGuardianTest is StdCheats, Test {
     function testBorrowingFeeWhileDecreasingCollateral() public addLP {
         openTradePosition(trader1, 2_000, 2_000, true);
 
-        PerpetualGuardian.Position memory position = perpetualGuardian
-            .getPosition(trader1);
+        PerpetualGuardian.Position memory position = perpetualGuardian.getPosition(trader1);
 
         vm.startPrank(trader1);
         vm.warp(perpetualGuardian.YEAR_IN_SECONDS() + 1); // adding 1, because that's the initial block.timestamp
@@ -580,10 +544,7 @@ contract PerpetualGuardianTest is StdCheats, Test {
 
         //check position state
         assertEq(position.collateral, 800e18); // 2000 starting - 200 fees - 1000 decrease
-        assertEq(
-            position.lastChangeTimestamp,
-            perpetualGuardian.YEAR_IN_SECONDS() + 1
-        );
+        assertEq(position.lastChangeTimestamp, perpetualGuardian.YEAR_IN_SECONDS() + 1);
         assertEq(position.ethAmount, 2e18); //same
 
         //check contract state
@@ -602,8 +563,7 @@ contract PerpetualGuardianTest is StdCheats, Test {
 
         perpetualGuardian.increasePositionSize(1_000);
 
-        PerpetualGuardian.Position memory position = perpetualGuardian
-            .getPosition(trader1);
+        PerpetualGuardian.Position memory position = perpetualGuardian.getPosition(trader1);
 
         //check position state
         assertEq(position.collateral, 1_990e18); // 2000 initial - 10 fees
@@ -615,16 +575,9 @@ contract PerpetualGuardianTest is StdCheats, Test {
         assertEq(perpetualGuardian.tradersCollateral(), 1_990e18); //collateral from the only trade
     }
 
-    function testIncreasePositionFeeShouldFailBecausePointsExceedMaximum()
-        public
-        addLP
-    {
+    function testIncreasePositionFeeShouldFailBecausePointsExceedMaximum() public addLP {
         vm.startPrank(perpetualGuardian.owner());
-        vm.expectRevert(
-            PerpetualGuardian
-                .PerpetualGuardian__MaximumPositionFeeBasisPointsExceeded
-                .selector
-        );
+        vm.expectRevert(PerpetualGuardian.PerpetualGuardian__MaximumPositionFeeBasisPointsExceeded.selector);
         perpetualGuardian.setPositionFeeBasisPoints(300);
     }
 
@@ -638,8 +591,7 @@ contract PerpetualGuardianTest is StdCheats, Test {
 
         perpetualGuardian.increasePositionSize(1_000);
 
-        PerpetualGuardian.Position memory position = perpetualGuardian
-            .getPosition(trader1);
+        PerpetualGuardian.Position memory position = perpetualGuardian.getPosition(trader1);
 
         //check position state
         assertEq(position.collateral, 1_850e18); // 2000 initial - 150 fees
@@ -657,11 +609,7 @@ contract PerpetualGuardianTest is StdCheats, Test {
 
     function testCantLiquidateHealthyPosition() public addLP addTrader {
         vm.startPrank(liquidator);
-        vm.expectRevert(
-            PerpetualGuardian
-                .PerpetualGuardian__PositionNotLiquidatable
-                .selector
-        );
+        vm.expectRevert(PerpetualGuardian.PerpetualGuardian__PositionNotLiquidatable.selector);
         perpetualGuardian.liquidate(trader1);
     }
 
@@ -682,11 +630,7 @@ contract PerpetualGuardianTest is StdCheats, Test {
         MockV3Aggregator(ethDaiPriceFeed).updateAnswer(1140e8);
 
         vm.startPrank(trader1);
-        vm.expectRevert(
-            PerpetualGuardian
-                .PerpetualGuardian__TraderCantLiquidateHimself
-                .selector
-        );
+        vm.expectRevert(PerpetualGuardian.PerpetualGuardian__TraderCantLiquidateHimself.selector);
         perpetualGuardian.liquidate(trader1);
     }
 
@@ -697,23 +641,15 @@ contract PerpetualGuardianTest is StdCheats, Test {
         perpetualGuardian.liquidate(trader2);
         vm.stopPrank();
 
-        vm.expectRevert(
-            PerpetualGuardian.PerpetualGuardian__PositionDoesNotExist.selector
-        );
-        PerpetualGuardian.Position memory position = perpetualGuardian
-            .getPosition(trader2);
+        vm.expectRevert(PerpetualGuardian.PerpetualGuardian__PositionDoesNotExist.selector);
+        PerpetualGuardian.Position memory position = perpetualGuardian.getPosition(trader2);
     }
 
     //================================================================================
     // Internal Reusable functions
     //================================================================================
 
-    function openTradePosition(
-        address trader,
-        uint256 collateral,
-        uint256 size,
-        bool isLong
-    ) internal {
+    function openTradePosition(address trader, uint256 collateral, uint256 size, bool isLong) internal {
         vm.startPrank(trader);
         DAI.increaseAllowance(address(perpetualGuardian), collateral);
         perpetualGuardian.openPosition(size, collateral, isLong);
